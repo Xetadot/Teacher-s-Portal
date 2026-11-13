@@ -1,0 +1,1017 @@
+<!doctype html>
+<!--
+  Teacher Portal - ONE file for every page.
+  view = "app"    -> lecturer portal (dashboard, calendar, booking, attendance, inquiries, to-do, settings)
+  view = "auth"   -> login / register   (uses: mode)
+  view = "public" -> student pages      (uses: page = "book" | "ask" | "closed")
+-->
+<html lang="en">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{% if view == 'app' %}Teacher Portal{% elif view == 'auth' %}Teacher Portal - {{ 'Login' if mode == 'login' else 'Register' }}{% elif page == 'book' %}Book an appointment{% elif page == 'ask' %}Send an inquiry{% else %}Link closed{% endif %}</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 40 40'%3E%3Crect width='40' height='40' rx='11' fill='%234581f7'/%3E%3Cpath d='M12.5 19.5v5.2c0 2.3 3.4 4.3 7.5 4.3s7.5-2 7.5-4.3v-5.2L20 23z' fill='%23fff' opacity='.85'/%3E%3Cpath d='M20 10.5 33 16.8 20 23.1 7 16.8z' fill='%23fff'/%3E%3C/svg%3E">
+<style>
+:root{
+  --bg:#191919; --card:#202020; --ink:#e8e8e8; --muted:#8c8c8c; --line:#2d2d2d; --soft:#262626;
+  --accent:#4581f7; --accent-h:#5b91ff; --accent-soft:rgba(69,129,247,.13);
+  --blue:#4581f7; --green:#3fbf7f; --yellow:#e0a93b; --red:#f06464;
+  --radius:10px;
+}
+*{box-sizing:border-box}
+html{color-scheme:dark}
+body{margin:0;font-family:"Inter","Segoe UI",system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);font-size:14px;line-height:1.5;-webkit-font-smoothing:antialiased}
+a{color:var(--accent)}
+button,input,select,textarea{font:inherit}
+input,select,textarea{width:100%;padding:9px 11px;border:1px solid var(--line);border-radius:8px;background:#1c1c1c;color:var(--ink);outline:none;transition:border-color .15s}
+input:focus,select:focus,textarea:focus{border-color:var(--accent);box-shadow:0 0 0 3px var(--accent-soft)}
+textarea{resize:vertical;min-height:90px}
+label{display:block;font-size:12px;font-weight:500;color:var(--muted);margin:12px 0 5px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:6px;white-space:nowrap;border:1px solid var(--accent);border-radius:8px;padding:8px 14px;background:var(--accent);color:#fff;font-weight:500;cursor:pointer;text-decoration:none;transition:opacity .15s}
+.btn:hover{background:var(--accent-h);border-color:var(--accent-h)}
+.btn.ghost{background:transparent;color:var(--accent);border-color:var(--line)}
+.btn.ghost:hover{background:var(--accent-soft);border-color:var(--accent)}
+.btn.small{padding:5px 10px;font-size:12px}
+.btn.danger{background:transparent;color:var(--red);border-color:rgba(240,100,100,.35)}
+.btn.danger:hover{background:rgba(240,100,100,.1);border-color:var(--red)}
+.btn.blue{background:var(--blue);border-color:var(--blue)}
+.ic{width:16px;height:16px;stroke:currentColor;fill:none;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round;vertical-align:-3px;flex-shrink:0}
+.btn.small .ic{width:13px;height:13px}
+.hidden{display:none!important}
+.muted{color:var(--muted)}
+.empty{color:var(--muted);text-align:center;padding:22px;font-size:13px}
+
+/* top bar */
+.topbar{position:sticky;top:0;z-index:20;background:rgba(25,25,25,.85);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+.topbar .in{max-width:1240px;margin:0 auto;padding:0 28px;height:60px;display:flex;align-items:center;gap:24px}
+.brand{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px;letter-spacing:-.2px;margin-right:auto;white-space:nowrap}
+.brand span{color:var(--accent);font-weight:500}
+.logo{width:26px;height:26px;flex-shrink:0}
+.nav{display:flex;align-items:center;gap:2px;overflow-x:auto;scrollbar-width:none}
+.nav::-webkit-scrollbar{display:none}
+.nav a{position:relative;display:flex;align-items:center;gap:6px;padding:7px 11px;border-radius:7px;color:var(--muted);text-decoration:none;cursor:pointer;white-space:nowrap;font-weight:500;transition:color .15s,background .15s}
+.nav a:hover{color:var(--accent)}
+.nav a.active{color:var(--accent);background:var(--accent-soft)}
+.nav .badge{background:var(--accent);color:#fff;border-radius:20px;font-size:10px;line-height:1;padding:3px 6px;font-weight:600}
+.user{position:relative}
+.avatar{width:32px;height:32px;border-radius:50%;background:var(--accent);color:#fff;border:0;font-weight:600;font-size:13px;cursor:pointer}
+.menu{position:absolute;right:0;top:42px;background:var(--card);border:1px solid var(--line);border-radius:10px;padding:12px;min-width:220px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+.menu b{display:block}
+.menu .muted{font-size:12px;display:block;margin-bottom:10px}
+.menu a{color:var(--ink);display:flex;align-items:center;gap:6px;text-decoration:none;padding:7px 8px;border-radius:6px;margin:0 -8px}
+.menu a:hover{background:var(--accent-soft);color:var(--accent)}
+
+/* layout */
+.main{max-width:1240px;margin:0 auto;padding:34px 28px 60px}
+.top{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:26px;gap:12px;flex-wrap:wrap}
+.top h1{margin:0;font-size:24px;font-weight:600;letter-spacing:-.4px;color:var(--accent)}
+.top p{margin:4px 0 0;color:var(--muted)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:20px}
+.card h3{margin:0 0 14px;font-size:14px;font-weight:600;display:flex;align-items:center;justify-content:space-between;gap:10px}
+.card h3 a{font-weight:500;color:var(--accent);text-decoration:none;font-size:12px}
+.card h3 a:hover{color:var(--accent-h)}
+.card h3 .ic{width:13px;height:13px}
+.grid{display:grid;gap:16px}
+.g2{grid-template-columns:1fr 1fr}
+.g3{grid-template-columns:repeat(3,1fr)}
+.g4{grid-template-columns:repeat(4,1fr)}
+.stat{padding:18px 20px}
+.stat .n{font-size:28px;font-weight:600;letter-spacing:-.5px;color:var(--accent)}
+.stat .l{color:var(--muted);font-size:12px}
+
+/* events */
+.ev{display:flex;gap:14px;padding:11px 0;border-bottom:1px solid var(--line);align-items:center}
+.ev:last-child{border:0}
+.ev .when{min-width:78px;font-weight:600;font-size:13px;font-variant-numeric:tabular-nums}
+.ev .when small{display:block;color:var(--muted);font-weight:400}
+.ev .what small{color:var(--muted)}
+.tag{display:inline-block;font-size:11px;font-weight:500;padding:1px 8px;border-radius:20px;text-transform:capitalize;border:1px solid var(--line);color:#b0b0b0;background:transparent}
+.t-class{color:var(--blue);border-color:rgba(69,129,247,.35)}
+.t-appointment{color:var(--yellow);border-color:rgba(224,169,59,.35)}
+.t-meeting{color:var(--green);border-color:rgba(63,191,127,.35)}
+.t-other{color:#a0a0a0}
+.p-High{color:var(--red);border-color:rgba(240,100,100,.35);background:rgba(240,100,100,.08)}
+.p-Normal{color:#a0a0a0}
+.p-Low{color:var(--green);border-color:rgba(63,191,127,.35)}
+
+/* inquiry boxes */
+.inq-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:12px}
+.inq{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px;cursor:pointer;transition:border-color .15s,box-shadow .15s}
+.inq:hover{border-color:var(--accent);box-shadow:0 6px 24px rgba(0,0,0,.35)}
+.inq .from{font-weight:600;display:flex;align-items:center;gap:7px}
+.inq.new .from::before{content:"";width:6px;height:6px;border-radius:50%;background:var(--accent)}
+.inq .subj{font-size:13px;margin:2px 0 10px}
+.inq .ai{font-size:13px;color:#c4c4c4;border-left:2px solid var(--accent);padding:2px 0 2px 10px;line-height:1.5}
+.inq .ai b{display:flex;align-items:center;gap:4px;color:var(--accent);font-size:10px;font-weight:600;letter-spacing:.6px;margin-bottom:3px}
+.inq .ai b .ic{width:11px;height:11px}
+.inq .foot{display:flex;gap:6px;margin-top:12px;flex-wrap:wrap;align-items:center}
+.inq .foot .st{margin-left:auto;font-size:11px;color:var(--muted);display:flex;align-items:center;gap:4px}
+.inq .foot .st .ic{width:12px;height:12px}
+.dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--accent);margin-right:2px}
+
+/* calendar */
+.cal-head{display:flex;align-items:center;gap:6px}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);border-top:1px solid var(--line);border-left:1px solid var(--line);border-radius:var(--radius);overflow:hidden;background:var(--card)}
+.cal .dow,.cal .day{border-right:1px solid var(--line);border-bottom:1px solid var(--line)}
+.cal .dow{padding:9px;font-size:11px;font-weight:500;color:var(--muted);text-align:left;text-transform:uppercase;letter-spacing:.6px}
+.cal .day{min-height:108px;padding:7px;cursor:pointer;transition:background .15s}
+.cal .day:hover{background:var(--soft)}
+.cal .day.off .num{color:#4a4a4a}
+.cal .day.today .num{background:var(--accent);color:#fff;border-radius:50%}
+.cal .num{display:inline-flex;width:24px;height:24px;align-items:center;justify-content:center;font-size:12px;font-weight:500}
+.cal .pill{font-size:11px;padding:2px 6px;border-radius:5px;margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border:0}
+.cal .pill.t-class{background:rgba(69,129,247,.15)}.cal .pill.t-appointment{background:rgba(224,169,59,.13)}.cal .pill.t-meeting{background:rgba(63,191,127,.13)}.cal .pill.t-other{background:var(--soft)}
+
+/* table */
+table{width:100%;border-collapse:collapse}
+th,td{text-align:left;padding:11px 8px;border-bottom:1px solid var(--line);font-size:13px}
+th{color:var(--muted);font-size:11px;font-weight:500;text-transform:uppercase;letter-spacing:.6px}
+tr.risk td{background:rgba(240,100,100,.06)}
+.seg{display:inline-flex;border:1px solid var(--line);border-radius:7px;overflow:hidden}
+.seg button{border:0;background:transparent;padding:5px 10px;cursor:pointer;font-size:12px;color:var(--muted)}
+.seg button+button{border-left:1px solid var(--line)}
+.seg button.on.present{background:var(--green);color:#fff}
+.seg button.on.late{background:var(--yellow);color:#fff}
+.seg button.on.absent{background:var(--red);color:#fff}
+.bar{height:4px;background:#333;border-radius:4px;overflow:hidden;width:80px;display:inline-block;vertical-align:middle;margin-right:8px}
+.bar i{display:block;height:100%}
+.tabs{display:flex;gap:6px;flex-wrap:wrap}
+.tabs button{border:1px solid var(--line);background:transparent;border-radius:20px;padding:5px 13px;cursor:pointer;color:var(--muted);font-size:13px}
+.tabs button.on{background:var(--accent);color:#fff;border-color:var(--accent)}
+.tabs button:not(.on):hover{color:var(--accent);border-color:var(--accent)}
+
+/* modal */
+.modal{position:fixed;inset:0;background:rgba(0,0,0,.6);display:flex;align-items:center;justify-content:center;z-index:50;padding:16px}
+.modal .box{background:var(--card);border:1px solid var(--line);border-radius:14px;width:100%;max-width:600px;max-height:90vh;overflow:auto;padding:26px;box-shadow:0 24px 70px rgba(0,0,0,.55)}
+.modal h2{margin:0 0 6px;font-size:18px;font-weight:600;color:var(--accent)}
+.msg-body{white-space:pre-wrap;background:var(--soft);border-radius:10px;padding:14px 16px;line-height:1.6;margin:14px 0}
+.row{display:flex;gap:10px}
+.row>*{flex:1}
+.actions{display:flex;gap:8px;justify-content:flex-end;margin-top:18px;flex-wrap:wrap}
+.linkbox{display:flex;gap:8px;align-items:center;background:var(--soft);border-radius:8px;padding:8px 10px;font-size:12px;word-break:break-all}
+.linkbox code{flex:1;font-family:ui-monospace,Menlo,monospace;color:var(--accent)}
+.toast{position:fixed;bottom:24px;left:50%;transform:translate(-50%,10px);background:var(--accent);color:#fff;padding:10px 16px;border-radius:9px;z-index:99;opacity:0;transition:.25s;pointer-events:none;font-size:13px}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+.task{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.task:last-child{border:0}
+.task input{width:auto;accent-color:var(--accent)}
+.task.done span{text-decoration:line-through;color:var(--muted)}
+.task .x{margin-left:6px;cursor:pointer;color:#5a5a5a;border:0;background:none;padding:2px}
+.task .x:hover{color:var(--red)}
+.task .x .ic{width:13px;height:13px}
+.daychips{display:flex;gap:5px;flex-wrap:wrap}
+.daychips label{display:flex;align-items:center;gap:5px;margin:0;color:var(--ink);font-weight:400;border:1px solid var(--line);padding:5px 10px;border-radius:7px;cursor:pointer}
+.daychips input{width:auto;accent-color:var(--accent)}
+#aiStatus .ic{width:14px;height:14px}
+
+/* public + login */
+.public{max-width:600px;margin:48px auto;padding:0 16px}
+.public .head{text-align:center;margin-bottom:24px}
+.public .head h1{margin:8px 0 4px;font-size:24px;font-weight:600;letter-spacing:-.4px;color:var(--accent)}
+.pub-brand,.brand-login{display:flex;align-items:center;gap:9px;font-weight:600;font-size:15px}
+.pub-brand{justify-content:center;margin-bottom:26px}
+.pub-brand span,.brand-login span{color:var(--accent);font-weight:500}
+.brand-login{margin-bottom:6px}
+.brand-login h2{margin:0;font-size:17px;font-weight:600}
+.slotday{margin-bottom:14px}
+.slotday b{display:block;margin-bottom:6px;font-weight:500}
+.slots{display:flex;flex-wrap:wrap;gap:6px}
+.slots label{margin:0}
+.slots input{display:none}
+.slots span{display:inline-block;padding:6px 11px;border:1px solid var(--line);border-radius:7px;cursor:pointer;color:var(--ink);font-weight:400;background:transparent;font-variant-numeric:tabular-nums}
+.slots span:hover{border-color:var(--accent);color:var(--accent)}
+.slots input:checked+span{background:var(--accent);color:#fff;border-color:var(--accent)}
+.alert{padding:12px 14px;border-radius:9px;margin-bottom:14px;font-size:13px}
+.alert.ok{background:rgba(63,191,127,.12);color:var(--green)}
+.alert.err{background:rgba(240,100,100,.12);color:var(--red)}
+.login-wrap{min-height:100vh;display:flex;align-items:center;justify-content:center;background:var(--bg);padding:16px}
+.login{width:100%;max-width:360px;padding:28px}
+
+@media (max-width:980px){
+  .topbar .in{padding:0 16px;gap:12px}
+  .brand div{display:none}
+  .nav a .lbl{display:none}
+  .nav a{padding:8px}
+  .main{padding:24px 16px 50px}
+  .g2,.g3,.g4{grid-template-columns:1fr 1fr}
+  .cal .day{min-height:68px}
+  .cal .pill{display:none}
+}
+@media (max-width:560px){.g2,.g3{grid-template-columns:1fr}.g4{grid-template-columns:1fr 1fr}.row{flex-direction:column}}
+
+/* dark extras */
+::selection{background:rgba(69,129,247,.35)}
+input[type=date]::-webkit-calendar-picker-indicator,input[type=time]::-webkit-calendar-picker-indicator{filter:invert(1);opacity:.6}
+::-webkit-scrollbar{width:10px;height:10px}::-webkit-scrollbar-thumb{background:#333;border-radius:10px;border:2px solid var(--bg)}
+.stat{transition:border-color .15s}.stat:hover{border-color:rgba(69,129,247,.45)}
+
+/* ---------- AI features */
+.ai-src{display:inline-block;font-size:10px;font-weight:600;letter-spacing:.6px;text-transform:uppercase;padding:2px 7px;border-radius:20px;margin-left:8px;vertical-align:2px}
+.ai-src.gemini{background:var(--accent-soft);color:var(--accent)}
+.ai-src.basic{background:var(--soft);color:var(--muted)}
+.ai-card{border-color:rgba(69,129,247,.35);background:linear-gradient(135deg,rgba(69,129,247,.08),var(--card) 55%)}
+.ai-card h3 span .ic{color:var(--accent)}
+.brief-h{font-size:15px;font-weight:600;margin-bottom:8px}
+.brief ul{margin:0;padding-left:18px;color:#c9c9c9;line-height:1.7}
+.ai-row{display:flex;gap:10px;align-items:center;padding:10px 12px;margin-bottom:14px;border-color:rgba(69,129,247,.35)}
+.ai-row>.ic{color:var(--accent);width:18px;height:18px}
+.ai-row input{border:0;background:transparent;padding:6px 2px;box-shadow:none!important}
+.ai-tools{display:flex;gap:8px;flex-wrap:wrap;margin:-2px 0 12px}
+.ai-box{border:1px solid rgba(69,129,247,.35);background:rgba(69,129,247,.06);border-radius:10px;padding:12px 14px;margin:0 0 12px;font-size:13px}
+.ai-box h4{margin:0 0 8px;font-size:13px;color:var(--accent);display:flex;align-items:center;gap:6px}
+.ai-box ul{margin:6px 0 0;padding-left:18px;color:#c9c9c9}
+.slot{display:flex;align-items:center;gap:10px;padding:7px 0;border-bottom:1px solid var(--line)}
+.slot:last-child{border:0}
+.slot small{color:var(--muted)}
+.slot .btn{margin-left:auto}
+.ins{border:1px solid var(--line);border-radius:10px;padding:14px;margin-bottom:10px}
+.ins .hd{display:flex;align-items:center;gap:8px;margin-bottom:6px;flex-wrap:wrap}
+.ins p{margin:4px 0;color:#c9c9c9;font-size:13px}
+.ins .act{color:var(--accent);font-size:13px}
+.sugg{display:flex;align-items:center;gap:10px;padding:9px 0;border-bottom:1px solid var(--line)}
+.sugg:last-child{border:0}
+.sugg small{display:block;color:var(--muted)}
+.sugg .btn{margin-left:auto}
+.rec{font-size:16px;font-weight:700}
+.rec.Approve{color:var(--green)}.rec.Decline{color:var(--red)}.rec.Ask{color:var(--yellow)}
+.loading{display:flex;align-items:center;gap:8px;color:var(--muted);font-size:13px}
+.loading::before{content:"";width:14px;height:14px;border-radius:50%;border:2px solid var(--line);border-top-color:var(--accent);animation:spin .8s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.ai-box.need{border-color:rgba(224,169,59,.45);background:rgba(224,169,59,.07)}
+.ai-box.need h4{color:var(--yellow)}
+.ai-box.need div{color:#c9c9c9}
+.msg.wide{max-width:100%;background:transparent;padding:0}
+.msg.wide .ai-box{margin:0}
+#keyCard.flash{animation:flash 1.6s ease}
+@keyframes flash{0%,100%{box-shadow:none}30%,70%{box-shadow:0 0 0 3px var(--accent),0 0 30px rgba(69,129,247,.5)}}
+.ai-src.hidden{display:none}
+/* chat assistant */
+#chatBtn{position:fixed;right:24px;bottom:24px;width:56px;height:56px;border-radius:50%;border:0;background:var(--accent);color:#fff;cursor:pointer;z-index:40;
+  box-shadow:0 10px 30px rgba(69,129,247,.45);display:flex;align-items:center;justify-content:center;transition:transform .15s}
+#chatBtn:hover{transform:scale(1.06)}
+#chatBtn .ic{width:24px;height:24px}
+#chatPanel{position:fixed;right:24px;bottom:92px;width:370px;max-width:calc(100vw - 32px);height:520px;max-height:calc(100vh - 140px);background:var(--card);
+  border:1px solid var(--line);border-radius:16px;z-index:40;display:flex;flex-direction:column;box-shadow:0 24px 70px rgba(0,0,0,.55);overflow:hidden}
+#chatPanel .ch{padding:14px 16px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:8px;font-weight:600}
+#chatPanel .ch .ic{color:var(--accent)}
+#chatPanel .ch button{margin-left:auto;background:none;border:0;color:var(--muted);cursor:pointer}
+#chatLog{flex:1;overflow-y:auto;padding:14px;display:flex;flex-direction:column;gap:10px}
+.msg{max-width:85%;padding:9px 12px;border-radius:12px;font-size:13px;line-height:1.5;white-space:pre-wrap}
+.msg.user{align-self:flex-end;background:var(--accent);color:#fff;border-bottom-right-radius:4px}
+.msg.bot{align-self:flex-start;background:var(--soft);color:var(--ink);border-bottom-left-radius:4px}
+.chips{display:flex;gap:6px;flex-wrap:wrap;padding:0 14px 10px}
+.chips button{border:1px solid var(--line);background:transparent;color:var(--accent);border-radius:20px;padding:4px 10px;font-size:12px;cursor:pointer}
+.chips button:hover{border-color:var(--accent)}
+#chatForm{display:flex;gap:8px;padding:12px;border-top:1px solid var(--line)}
+#chatForm .btn{padding:8px 11px}
+</style>
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <linearGradient id="lg" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#f29a5c"/><stop offset="1" stop-color="#d9531e"/></linearGradient>
+  </defs>
+  <symbol id="logo" viewBox="0 0 40 40">
+    <rect width="40" height="40" rx="10" fill="#4581f7"/>
+    <path d="M20 11 33 17.5 20 24 7 17.5z" fill="#fff"/>
+    <path d="M13 20.6v5c0 2.2 3.1 4 7 4s7-1.8 7-4v-5L20 24z" fill="#fff" opacity=".55"/>
+  </symbol>
+  <symbol id="i-home" viewBox="0 0 24 24"><path d="M3 10.5 12 3l9 7.5V20a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z"/></symbol>
+  <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+  <symbol id="i-link" viewBox="0 0 24 24"><path d="M10 14a4 4 0 0 0 5.66 0l3-3a4 4 0 0 0-5.66-5.66l-1 1"/><path d="M14 10a4 4 0 0 0-5.66 0l-3 3a4 4 0 0 0 5.66 5.66l1-1"/></symbol>
+  <symbol id="i-attendance" viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 4V3h6v1M9 13l2 2 4-4"/></symbol>
+  <symbol id="i-mail" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="m3 7 9 6 9-6"/></symbol>
+  <symbol id="i-tasks" viewBox="0 0 24 24"><path d="M10 6h10M10 12h10M10 18h10M3.5 6l1.5 1.5L8 4.5M3.5 12l1.5 1.5L8 10.5M3.5 18l1.5 1.5L8 16.5"/></symbol>
+  <symbol id="i-settings" viewBox="0 0 24 24"><path d="M4 6h9M17 6h3M4 12h3M11 12h9M4 18h11M19 18h1"/><circle cx="15" cy="6" r="2"/><circle cx="9" cy="12" r="2"/><circle cx="17" cy="18" r="2"/></symbol>
+  <symbol id="i-spark" viewBox="0 0 24 24"><path d="M12 3l1.9 5.1L19 10l-5.1 1.9L12 17l-1.9-5.1L5 10l5.1-1.9zM19 16l.8 2.2L22 19l-2.2.8L19 22l-.8-2.2L16 19l2.2-.8z" fill="currentColor" stroke="none"/></symbol>
+  <symbol id="i-check" viewBox="0 0 24 24"><path d="m5 12.5 4.5 4.5L19 7"/></symbol>
+  <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></symbol>
+  <symbol id="i-alert" viewBox="0 0 24 24"><path d="M12 4 2.5 20h19z"/><path d="M12 10v4M12 17h.01"/></symbol>
+  <symbol id="i-left" viewBox="0 0 24 24"><path d="m15 6-6 6 6 6"/></symbol>
+  <symbol id="i-right" viewBox="0 0 24 24"><path d="m9 6 6 6-6 6"/></symbol>
+  <symbol id="i-download" viewBox="0 0 24 24"><path d="M12 4v11M7 10l5 5 5-5M5 20h14"/></symbol>
+  <symbol id="i-note" viewBox="0 0 24 24"><path d="M5 4h10l4 4v12H5z"/><path d="M14 4v5h5"/></symbol>
+  <symbol id="i-logout" viewBox="0 0 24 24"><path d="M14 4h5v16h-5M10 8l-4 4 4 4M6 12h10"/></symbol>
+  <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+  <symbol id="i-chat" viewBox="0 0 24 24"><path d="M4 5h16v11H9l-5 4z"/><path d="M8 10h.01M12 10h.01M16 10h.01"/></symbol>
+  <symbol id="i-send" viewBox="0 0 24 24"><path d="M4 12 20 4l-6 16-3-7z"/></symbol>
+  <symbol id="i-refresh" viewBox="0 0 24 24"><path d="M20 11a8 8 0 1 0-2.3 5.7M20 4v7h-7"/></symbol>
+</svg>
+
+{% if view == 'app' %}
+{# ===================== LECTURER PORTAL ===================== #}
+<div class="app">
+  <header class="topbar"><div class="in">
+    <div class="brand"><svg class="logo"><use href="#logo"/></svg><div>Teacher<span>Portal</span></div></div>
+    <nav class="nav">
+      <a data-tab="dashboard" class="active" title="Dashboard"><svg class="ic"><use href="#i-home"/></svg><span class="lbl">Dashboard</span></a>
+      <a data-tab="calendar" title="Calendar"><svg class="ic"><use href="#i-calendar"/></svg><span class="lbl">Calendar</span></a>
+      <a data-tab="booking" title="Booking"><svg class="ic"><use href="#i-link"/></svg><span class="lbl">Booking</span></a>
+      <a data-tab="attendance" title="Attendance"><svg class="ic"><use href="#i-attendance"/></svg><span class="lbl">Attendance</span></a>
+      <a data-tab="inquiries" title="Inquiries"><svg class="ic"><use href="#i-mail"/></svg><span class="lbl">Inquiries</span> <span class="badge hidden" id="navBadge"></span></a>
+      <a data-tab="tasks" title="To-Do"><svg class="ic"><use href="#i-tasks"/></svg><span class="lbl">To-Do</span></a>
+      <a data-tab="settings" title="Settings"><svg class="ic"><use href="#i-settings"/></svg><span class="lbl">Settings</span></a>
+    </nav>
+    <div class="user">
+      <button class="avatar" id="avatar" onclick="document.getElementById('userMenu').classList.toggle('hidden')">?</button>
+      <div class="menu hidden" id="userMenu">
+        <b id="meName">...</b><span class="muted" id="meEmail"></span>
+        <a onclick="go('settings');document.getElementById('userMenu').classList.add('hidden')"><svg class="ic"><use href="#i-settings"/></svg> Settings</a>
+        <a href="/logout"><svg class="ic"><use href="#i-logout"/></svg> Log out</a>
+      </div>
+    </div>
+  </div></header>
+
+  <main class="main">
+
+    <!-- DASHBOARD -->
+    <section id="tab-dashboard">
+      <div class="top">
+        <div><h1 id="hello">Good day</h1><p id="todayText"></p></div>
+        <button class="btn" onclick="openEvent()"><svg class="ic"><use href="#i-plus"/></svg> New event</button>
+      </div>
+      <div class="card ai-card" style="margin-bottom:16px">
+        <h3><span><svg class="ic"><use href="#i-spark"/></svg> AI daily briefing <span class="ai-src" id="briefSrc"></span></span>
+          <button class="btn ghost small" onclick="loadBriefing(true)"><svg class="ic"><use href="#i-refresh"/></svg> Refresh</button></h3>
+        <div class="brief" id="brief"><div class="loading">Reading your day...</div></div>
+      </div>
+      <div class="grid g4" style="margin-bottom:16px">
+        <div class="card stat"><div class="n" id="sToday">0</div><div class="l">Classes &amp; meetings today</div></div>
+        <div class="card stat"><div class="n" id="sWeek">0</div><div class="l">Events in next 7 days</div></div>
+        <div class="card stat"><div class="n" id="sUnread" style="color:var(--accent)">0</div><div class="l">New inquiries</div></div>
+        <div class="card stat"><div class="n" id="sRisk" style="color:var(--red)">0</div><div class="l">Students below 80% attendance</div></div>
+      </div>
+      <div class="grid g2" style="margin-bottom:16px">
+        <div class="card"><h3>Upcoming schedule <a onclick="go('calendar')" style="font-size:12px;cursor:pointer">Open calendar</a></h3><div id="dUpcoming"></div></div>
+        <div class="grid" style="gap:16px">
+          <div class="card"><h3>At-risk students <a onclick="go('attendance')" style="font-size:12px;cursor:pointer">Attendance</a></h3><div id="dRisk"></div></div>
+          <div class="card"><h3>To-do <a onclick="go('tasks')" style="font-size:12px;cursor:pointer">All tasks</a></h3><div id="dTasks"></div></div>
+        </div>
+      </div>
+      <div class="card">
+        <h3>Student inquiries <span class="muted" style="font-size:12px;font-weight:400"><svg class="ic"><use href="#i-spark"/></svg> AI preview by Gemini · click a box to read the full message</span></h3>
+        <div class="inq-grid" id="dInq"></div>
+      </div>
+    </section>
+
+    <!-- CALENDAR -->
+    <section id="tab-calendar" class="hidden">
+      <div class="top">
+        <div><h1>Calendar</h1><p>Click a day to add a class or appointment.</p></div>
+        <div class="cal-head">
+          <button class="btn ghost small" onclick="moveMonth(-1)"><svg class="ic"><use href="#i-left"/></svg></button>
+          <b id="calTitle" style="min-width:130px;text-align:center"></b>
+          <button class="btn ghost small" onclick="moveMonth(1)"><svg class="ic"><use href="#i-right"/></svg></button>
+          <button class="btn ghost small" onclick="calDate=new Date();loadCalendar()">Today</button>
+          <button class="btn" onclick="openEvent()"><svg class="ic"><use href="#i-plus"/></svg> New event</button>
+        </div>
+      </div>
+      <div class="card ai-row"><svg class="ic"><use href="#i-spark"/></svg>
+        <input id="nlEvent" placeholder='Type it in plain English, e.g. "Java lab every Thursday 10-12 in Lab 3 for the semester"' onkeydown="if(event.key==='Enter')aiEvent()">
+        <button class="btn small" onclick="aiEvent()">AI fill</button></div>
+      <div class="cal" id="cal"></div>
+    </section>
+
+    <!-- BOOKING LINKS -->
+    <section id="tab-booking" class="hidden">
+      <div class="top"><div><h1>Booking Links</h1><p>Create a link, send it to your students, and they can book a free slot in your calendar.</p></div></div>
+      <div class="grid g2">
+        <div class="card">
+          <h3>Create a new booking link</h3>
+          <label>Title</label><input id="bTitle" value="Consultation Hours">
+          <div class="row">
+            <div><label>Slot length</label>
+              <select id="bDur"><option value="15">15 min</option><option value="30" selected>30 min</option><option value="45">45 min</option><option value="60">60 min</option></select></div>
+            <div><label>Location</label><input id="bLoc" placeholder="Office L4-12 / Teams"></div>
+          </div>
+          <div class="row">
+            <div><label>From</label><input id="bStart" type="time" value="09:00"></div>
+            <div><label>To</label><input id="bEnd" type="time" value="17:00"></div>
+          </div>
+          <label>Available days</label>
+          <div class="daychips" id="bDays"></div>
+          <button class="btn" style="margin-top:14px" onclick="createLink()">Generate link</button>
+        </div>
+        <div class="card"><h3>Your links</h3><div id="linkList"></div></div>
+      </div>
+    </section>
+
+    <!-- ATTENDANCE -->
+    <section id="tab-attendance" class="hidden">
+      <div class="top">
+        <div><h1>Attendance Tracker</h1><p>Mark attendance per class. Students under 80% are flagged as at-risk.</p></div>
+        <button class="btn" onclick="openCourse()"><svg class="ic"><use href="#i-plus"/></svg> New module</button>
+      </div>
+      <div class="tabs" id="courseTabs" style="margin-bottom:14px"></div>
+      <div class="card" id="attCard">
+        <div class="top" style="margin-bottom:10px">
+          <div><h3 id="attTitle" style="margin:0"></h3><span class="muted" id="attSub"></span></div>
+          <div class="row" style="flex:0 0 auto;align-items:center">
+            <input type="date" id="attDate" style="width:auto">
+            <button class="btn ghost small" onclick="aiInsights()"><svg class="ic"><use href="#i-spark"/></svg> AI insights</button>
+            <button class="btn ghost small" onclick="markAll('present')">All present</button>
+            <button class="btn small" onclick="saveAttendance()">Save</button>
+          </div>
+        </div>
+        <div style="overflow-x:auto"><table>
+          <thead><tr><th>Student</th><th>Today</th><th>Overall</th><th>P / L / A</th><th></th></tr></thead>
+          <tbody id="attBody"></tbody>
+        </table></div>
+        <div class="actions" style="justify-content:space-between">
+          <div><button class="btn ghost small" onclick="openAddStudents()">+ Add students</button>
+            <button class="btn ghost small" onclick="exportCsv()"><svg class="ic"><use href="#i-download"/></svg> Export CSV</button></div>
+          <button class="btn danger small" onclick="deleteCourse()">Delete module</button>
+        </div>
+      </div>
+      <div class="card empty hidden" id="attEmpty">No modules yet. Click "<svg class="ic"><use href="#i-plus"/></svg> New module" to add one.</div>
+    </section>
+
+    <!-- INQUIRIES -->
+    <section id="tab-inquiries" class="hidden">
+      <div class="top">
+        <div><h1>Student Inquiries</h1><p>Messages from students who used your inquiry link. Gemini sorts them and writes a quick summary.</p></div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <h3>Your inquiry link <span class="muted" style="font-size:12px;font-weight:400">Share this with your students (Moodle, Teams, email)</span></h3>
+        <div class="linkbox"><code id="inqLink"></code><button class="btn small" onclick="copy(document.getElementById('inqLink').textContent)">Copy</button></div>
+      </div>
+      <div class="tabs" id="inqFilter" style="margin-bottom:14px"></div>
+      <div class="inq-grid" id="inqAll"></div>
+    </section>
+
+    <!-- TASKS -->
+    <section id="tab-tasks" class="hidden">
+      <div class="top"><div><h1>To-Do List</h1><p>Marking, uploads, reports - keep track of it here.</p></div></div>
+      <div class="card">
+        <div class="row" style="margin-bottom:10px">
+          <input id="tText" placeholder="e.g. Mark Java assignment batch 2" style="flex:3">
+          <input id="tDue" type="date">
+          <button class="btn" style="flex:0 0 auto" onclick="addTask()">Add</button>
+        </div>
+        <div id="taskList"></div>
+      </div>
+      <div class="card ai-card" style="margin-top:16px">
+        <h3><span><svg class="ic"><use href="#i-spark"/></svg> AI task suggestions <span class="ai-src" id="tsSrc"></span></span>
+          <button class="btn small" onclick="aiTasks()"><svg class="ic"><use href="#i-spark"/></svg> Suggest tasks</button></h3>
+        <div id="taskSugg"><div class="muted" style="font-size:13px">Gemini looks at unanswered messages, upcoming classes and at-risk students, then suggests what to do next.</div></div>
+      </div>
+    </section>
+
+    <!-- SETTINGS -->
+    <section id="tab-settings" class="hidden">
+      <div class="top"><div><h1>Settings</h1></div></div>
+      <div class="grid g2">
+        <div class="card">
+          <h3>Profile</h3>
+          <label>Display name</label><input id="setName">
+          <button class="btn" style="margin-top:12px" onclick="saveName()">Save</button>
+        </div>
+        <div class="card" id="keyCard">
+          <h3>Gemini AI</h3>
+          <p class="muted" style="margin:0">Get a free key at aistudio.google.com, then click "Get API key". The AI features (briefing, insights, meeting finder, extension advice, event creator, task suggestions and chat) need this key.</p>
+          <label>Gemini API key</label><input id="setKey" type="password" placeholder="Paste key here (leave blank to keep current)">
+          <div class="actions" style="justify-content:flex-start">
+            <button class="btn" onclick="saveKey()">Save key</button>
+            <button class="btn ghost" onclick="testAi()">Test connection</button>
+          </div>
+          <p id="aiStatus" class="muted"></p>
+        </div>
+        <div class="card">
+          <h3>Inquiry link</h3>
+          <p class="muted" style="margin:0 0 10px">Making a new link stops the old one from working.</p>
+          <button class="btn ghost" onclick="newInquiryLink()">Generate new inquiry link</button>
+        </div>
+      </div>
+    </section>
+
+  </main>
+</div>
+
+<!-- MODALS -->
+<div class="modal hidden" id="modal"><div class="box" id="modalBox"></div></div>
+<div class="toast" id="toast"></div>
+<button id="chatBtn" title="Ask the AI assistant" onclick="toggleChat()"><svg class="ic"><use href="#i-chat"/></svg></button>
+<div id="chatPanel" class="hidden">
+  <div class="ch"><svg class="ic"><use href="#i-spark"/></svg> AI assistant <span class="ai-src" id="chatSrc"></span><button onclick="toggleChat()"><svg class="ic"><use href="#i-x"/></svg></button></div>
+  <div id="chatLog"><div class="msg bot">Hi! Ask me about your schedule, free time, attendance, student messages or tasks.</div></div>
+  <div class="chips" id="chatChips">
+    <button>When am I free on Wednesday?</button><button>Who missed the most classes?</button>
+    <button>Which messages need a reply?</button><button>What's on today?</button>
+  </div>
+  <form id="chatForm" onsubmit="sendChat(event)"><input id="chatIn" placeholder="Ask anything about your portal..." autocomplete="off">
+    <button class="btn"><svg class="ic"><use href="#i-send"/></svg></button></form>
+</div>
+
+{% raw %}
+<script>
+const $ = id => document.getElementById(id);
+const ic = n => `<svg class="ic"><use href="#i-${n}"/></svg>`;
+const esc = s => String(s ?? "").replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const DAYS = ["Mon","Tue","Wed","Thu","Fri","Sat","Sun"];
+let ME = {}, calDate = new Date(), courses = [], currentCourse = null, attMarks = {}, inqFilter = "all";
+
+async function api(url, method = "GET", body) {
+  const opt = {method, headers: {"Content-Type": "application/json"}};
+  if (body !== undefined) opt.body = JSON.stringify(body);
+  const r = await fetch(url, opt);
+  if (r.status === 401) { location.href = "/login"; return; }
+  const data = await r.json();
+  if (!r.ok) { if (!data.need_key) toast(data.error || "Something went wrong"); throw data; }
+  return data;
+}
+function toast(t) { const el = $("toast"); el.textContent = t; el.classList.add("show"); setTimeout(() => el.classList.remove("show"), 2200); }
+function copy(t) { navigator.clipboard.writeText(t).then(() => toast("Link copied")); }
+function closeModal() { $("modal").classList.add("hidden"); }
+function showModal(html) { $("modalBox").innerHTML = html; $("modal").classList.remove("hidden"); }
+$("modal").addEventListener("click", e => { if (e.target.id === "modal") closeModal(); });
+function iso(d) { return d.getFullYear() + "-" + String(d.getMonth()+1).padStart(2,"0") + "-" + String(d.getDate()).padStart(2,"0"); }
+function niceDate(s) { const d = new Date(s + "T00:00"); return d.toLocaleDateString("en-GB", {weekday:"short", day:"numeric", month:"short"}); }
+
+// ---------- navigation
+document.querySelectorAll(".nav a").forEach(a => a.onclick = () => go(a.dataset.tab));
+function go(tab) {
+  document.querySelectorAll(".nav a").forEach(a => a.classList.toggle("active", a.dataset.tab === tab));
+  document.querySelectorAll("main > section").forEach(s => s.classList.toggle("hidden", s.id !== "tab-" + tab));
+  ({dashboard: loadDashboard, calendar: loadCalendar, booking: loadLinks, attendance: loadCourses,
+    inquiries: loadInquiries, tasks: loadTasks, settings: loadSettings})[tab]();
+}
+
+// ---------- dashboard
+function eventRow(e, showDate = true) {
+  return `<div class="ev"><div class="when">${e.start_time}<small>${showDate ? niceDate(e.date) : e.end_time}</small></div>
+    <div class="what"><b>${esc(e.title)}</b> <span class="tag t-${e.type}">${e.type}</span><br>
+    <small>${esc(e.location || "")}${e.student_email ? " · " + esc(e.student_email) : ""}</small></div></div>`;
+}
+function inqBox(q) {
+  return `<div class="inq ${q.status === "new" ? "new" : ""}" onclick="openInquiry(${q.id})">
+    <div class="from">${esc(q.student_name)}</div>
+    <div class="subj muted">${esc(q.subject)}</div>
+    <div class="ai"><b>${ic("spark")} AI SUMMARY</b>${esc(q.summary)}</div>
+    <div class="foot"><span class="tag t-class">${esc(q.category)}</span><span class="tag p-${q.priority}">${q.priority}</span>
+    <span class="st">${q.status === "new" ? '<i class="dot"></i>New' : q.status === "replied" ? ic("check") + " Replied" : "Read"}</span></div></div>`;
+}
+async function loadDashboard() {
+  const d = await api("/api/dashboard");
+  const h = new Date().getHours();
+  $("hello").textContent = (h < 12 ? "Good morning" : h < 18 ? "Good afternoon" : "Good evening") + ", " + (ME.name || "");
+  $("todayText").textContent = new Date().toLocaleDateString("en-GB", {weekday:"long", day:"numeric", month:"long", year:"numeric"});
+  $("sToday").textContent = d.today_count; $("sWeek").textContent = d.upcoming.length;
+  $("sUnread").textContent = d.unread; $("sRisk").textContent = d.at_risk.length;
+  setBadge(d.unread);
+  $("dUpcoming").innerHTML = d.upcoming.length ? d.upcoming.slice(0, 7).map(e => eventRow(e)).join("") : '<div class="empty">Nothing scheduled this week.</div>';
+  $("dRisk").innerHTML = d.at_risk.length ? d.at_risk.slice(0, 4).map(s =>
+    `<div class="ev"><div class="what"><b>${esc(s.name)}</b> <small>${esc(s.student_id)} · ${esc(s.course)}</small></div>
+     <span class="tag p-High" style="margin-left:auto">${s.percent}%</span></div>`).join("") : '<div class="empty">Everyone is above 80%</div>';
+  $("dTasks").innerHTML = d.tasks.length ? d.tasks.slice(0, 4).map(t =>
+    `<div class="task"><input type="checkbox" onchange="toggleTask(${t.id})"><span>${esc(t.text)}</span><small class="muted" style="margin-left:auto">${t.due ? niceDate(t.due) : ""}</small></div>`).join("")
+    : '<div class="empty">All done!</div>';
+  loadBriefing();
+  $("dInq").innerHTML = d.inquiries.length ? d.inquiries.map(inqBox).join("") : '<div class="empty">No inquiries yet. Share your inquiry link with students.</div>';
+}
+function setBadge(n) { const b = $("navBadge"); b.textContent = n; b.classList.toggle("hidden", !n); }
+
+// ---------- calendar
+async function loadCalendar() {
+  const y = calDate.getFullYear(), m = calDate.getMonth();
+  $("calTitle").textContent = calDate.toLocaleDateString("en-GB", {month:"long", year:"numeric"});
+  const first = new Date(y, m, 1), offset = (first.getDay() + 6) % 7;
+  const start = new Date(y, m, 1 - offset), end = new Date(start); end.setDate(start.getDate() + 41);
+  const events = await api(`/api/events?start=${iso(start)}&end=${iso(end)}`);
+  const byDay = {}; events.forEach(e => (byDay[e.date] = byDay[e.date] || []).push(e));
+  let html = DAYS.map(d => `<div class="dow">${d}</div>`).join("");
+  const todayIso = iso(new Date());
+  for (let i = 0; i < 42; i++) {
+    const d = new Date(start); d.setDate(start.getDate() + i); const k = iso(d);
+    const evs = byDay[k] || [];
+    html += `<div class="day ${d.getMonth() !== m ? "off" : ""} ${k === todayIso ? "today" : ""}" onclick="dayClick('${k}')">
+      <span class="num">${d.getDate()}</span>
+      ${evs.slice(0, 3).map(e => `<div class="pill t-${e.type}">${e.start_time} ${esc(e.title)}</div>`).join("")}
+      ${evs.length > 3 ? `<div class="muted" style="font-size:11px">+${evs.length - 3} more</div>` : ""}</div>`;
+  }
+  $("cal").innerHTML = html;
+  window._calEvents = byDay;
+}
+function moveMonth(n) { calDate = new Date(calDate.getFullYear(), calDate.getMonth() + n, 1); loadCalendar(); }
+function dayClick(k) {
+  const evs = (window._calEvents || {})[k] || [];
+  if (!evs.length) return openEvent(k);
+  showModal(`<h2>${niceDate(k)}</h2>
+    ${evs.map(e => `<div class="ev"><div class="when">${e.start_time}<small>${e.end_time}</small></div>
+      <div class="what"><b>${esc(e.title)}</b> <span class="tag t-${e.type}">${e.type}</span><br>
+      <small>${esc(e.location || "")}${e.student_email ? " · " + esc(e.student_email) : ""}</small></div>
+      <button class="btn ghost small" style="margin-left:auto" onclick="delEvent(${e.id})">Delete</button></div>
+      ${e.notes ? `<div class="muted" style="font-size:12px;margin:-4px 0 6px 96px">${ic("note")} ${esc(e.notes)}</div>` : ""}`).join("")}
+    <div class="actions"><button class="btn ghost" onclick="closeModal()">Close</button><button class="btn" onclick="openEvent('${k}')">+ Add event</button></div>`);
+}
+function openEvent(day, pre) {
+  showModal(`<h2>New event</h2>
+    <label>Title</label><input id="eTitle" placeholder="e.g. Java Programming - Lecture">
+    <div class="row"><div><label>Type</label><select id="eType"><option value="class">Class</option><option value="appointment">Appointment</option><option value="meeting">Meeting</option><option value="other">Other</option></select></div>
+    <div><label>Date</label><input id="eDate" type="date" value="${day || iso(new Date())}"></div></div>
+    <div class="row"><div><label>Start</label><input id="eStart" type="time" value="09:00"></div><div><label>End</label><input id="eEnd" type="time" value="10:00"></div></div>
+    <div class="row"><div><label>Location</label><input id="eLoc"></div>
+    <div><label>Repeat weekly for</label><select id="eRep"><option value="1">Just once</option><option value="4">4 weeks</option><option value="7">7 weeks</option><option value="14">14 weeks (semester)</option></select></div></div>
+    <label>Notes</label><textarea id="eNotes" rows="2"></textarea>
+    <div class="actions"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="saveEvent()">Save event</button></div>`);
+}
+function fillEvent(p) {
+  $("eTitle").value = p.title || ""; $("eType").value = p.type || "class"; $("eDate").value = p.date;
+  $("eStart").value = p.start_time; $("eEnd").value = p.end_time; $("eLoc").value = p.location || ""; $("eNotes").value = p.notes || "";
+  const rep = $("eRep"); const n = String(p.repeat_weeks || 1);
+  if (![...rep.options].some(o => o.value === n)) rep.add(new Option(n + " weeks", n));
+  rep.value = n;
+}
+async function saveEvent() {
+  await api("/api/events", "POST", {title: $("eTitle").value, type: $("eType").value, date: $("eDate").value,
+    start_time: $("eStart").value, end_time: $("eEnd").value, location: $("eLoc").value,
+    notes: $("eNotes").value, repeat_weeks: $("eRep").value});
+  closeModal(); toast("Event saved"); refreshCurrent();
+}
+async function delEvent(id) { if (!confirm("Delete this event?")) return; await api("/api/events/" + id, "DELETE"); closeModal(); toast("Deleted"); refreshCurrent(); }
+function refreshCurrent() { const a = document.querySelector(".nav a.active"); go(a ? a.dataset.tab : "dashboard"); }
+
+// ---------- booking links
+$("bDays").innerHTML = DAYS.map((d, i) => `<label><input type="checkbox" value="${i}" ${i < 5 ? "checked" : ""}>${d}</label>`).join("");
+async function loadLinks() {
+  const links = await api("/api/links");
+  $("linkList").innerHTML = links.length ? links.map(l => `
+    <div style="padding:10px 0;border-bottom:1px solid var(--line)">
+      <b>${esc(l.title)}</b> <span class="tag ${l.active ? "p-Low" : "p-Normal"}">${l.active ? "Active" : "Off"}</span>
+      <div class="muted" style="font-size:12px;margin:3px 0 7px">${l.duration} min · ${l.days.split(",").filter(x => x !== "").map(x => DAYS[x]).join(", ")} · ${l.start_hour}-${l.end_hour}${l.location ? " · " + esc(l.location) : ""}</div>
+      <div class="linkbox"><code>${l.url}</code><button class="btn small" onclick="copy('${l.url}')">Copy</button><a class="btn ghost small" href="${l.url}" target="_blank" style="text-decoration:none">Open</a></div>
+      <div style="margin-top:6px"><button class="btn ghost small" onclick="toggleLink(${l.id})">${l.active ? "Turn off" : "Turn on"}</button>
+      <button class="btn ghost small" onclick="delLink(${l.id})">Delete</button></div>
+    </div>`).join("") : '<div class="empty">No links yet.</div>';
+}
+async function createLink() {
+  const days = [...$("bDays").querySelectorAll("input:checked")].map(x => +x.value);
+  if (!days.length) return toast("Pick at least one day");
+  await api("/api/links", "POST", {title: $("bTitle").value, duration: $("bDur").value, location: $("bLoc").value,
+    start_hour: $("bStart").value, end_hour: $("bEnd").value, days});
+  toast("Link created"); loadLinks();
+}
+async function toggleLink(id) { await api("/api/links/" + id, "PATCH"); loadLinks(); }
+async function delLink(id) { if (confirm("Delete this link?")) { await api("/api/links/" + id, "DELETE"); loadLinks(); } }
+
+// ---------- attendance
+async function loadCourses() {
+  courses = await api("/api/courses");
+  $("attEmpty").classList.toggle("hidden", courses.length > 0);
+  $("attCard").classList.toggle("hidden", courses.length === 0);
+  if (!courses.length) { $("courseTabs").innerHTML = ""; return; }
+  if (!currentCourse || !courses.find(c => c.id === currentCourse)) currentCourse = courses[0].id;
+  $("courseTabs").innerHTML = courses.map(c => `<button class="${c.id === currentCourse ? "on" : ""}" onclick="currentCourse=${c.id};loadCourses()">${esc(c.code)} · ${esc(c.name)}</button>`).join("");
+  if (!$("attDate").value) $("attDate").value = iso(new Date());
+  loadAttendance();
+}
+$("attDate").onchange = () => loadAttendance();
+async function loadAttendance() {
+  const d = await api(`/api/courses/${currentCourse}/attendance?date=${$("attDate").value}`);
+  $("attTitle").textContent = d.course.code + " - " + d.course.name;
+  const risk = d.students.filter(s => s.at_risk).length;
+  $("attSub").textContent = `${d.students.length} students · ${d.sessions.length} sessions recorded · ${risk} at risk`;
+  attMarks = {};
+  d.students.forEach(s => attMarks[s.id] = s.today);
+  $("attBody").innerHTML = d.students.length ? d.students.map(s => {
+    const col = s.percent >= 90 ? "var(--green)" : s.percent >= 80 ? "var(--yellow)" : "var(--red)";
+    return `<tr class="${s.at_risk ? "risk" : ""}"><td><b>${esc(s.name)}</b><br><small class="muted">${esc(s.student_id)}</small></td>
+      <td><div class="seg" data-s="${s.id}">${["present","late","absent"].map(st =>
+        `<button class="${st} ${s.today === st ? "on" : ""}" onclick="setMark(${s.id},'${st}')">${st[0].toUpperCase() + st.slice(1)}</button>`).join("")}</div></td>
+      <td><span class="bar"><i style="width:${s.percent}%;background:${col}"></i></span><b style="color:${col}">${s.percent}%</b>${s.at_risk ? ' <span class="tag p-High">At risk</span>' : ""}</td>
+      <td class="muted">${s.present} / ${s.late} / ${s.absent}</td>
+      <td><button class="btn ghost small" onclick="delStudent(${s.id})">${ic("x")}</button></td></tr>`;
+  }).join("") : '<tr><td colspan="5" class="empty">No students yet. Click "+ Add students".</td></tr>';
+}
+function setMark(id, st) {
+  attMarks[id] = attMarks[id] === st ? "" : st;
+  document.querySelectorAll(`.seg[data-s="${id}"] button`).forEach(b => b.classList.toggle("on", b.classList.contains(attMarks[id])));
+}
+function markAll(st) { Object.keys(attMarks).forEach(id => { attMarks[id] = ""; setMark(id, st); }); }
+async function saveAttendance() { await api(`/api/courses/${currentCourse}/attendance`, "POST", {date: $("attDate").value, marks: attMarks}); toast("Attendance saved"); loadAttendance(); }
+function exportCsv() { location.href = `/api/courses/${currentCourse}/export`; }
+async function deleteCourse() { if (!confirm("Delete this module and all its attendance?")) return; await api("/api/courses/" + currentCourse, "DELETE"); currentCourse = null; loadCourses(); }
+async function delStudent(id) { if (!confirm("Remove this student?")) return; await api("/api/students/" + id, "DELETE"); loadAttendance(); }
+function openCourse() {
+  showModal(`<h2>New module</h2>
+    <div class="row"><div><label>Module code</label><input id="cCode" placeholder="AAPP013-4-2"></div><div><label>Module name</label><input id="cName" placeholder="Java Programming"></div></div>
+    <label>Students (one per line: TP number, name, email)</label>
+    <textarea id="cStu" rows="6" placeholder="TP091075, Zhi Yang, tp091075@mail.apu.edu.my&#10;TP091076, Ali Hassan"></textarea>
+    <div class="actions"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="saveCourse()">Create</button></div>`);
+}
+async function saveCourse() { const r = await api("/api/courses", "POST", {code: $("cCode").value, name: $("cName").value, students: $("cStu").value}); currentCourse = r.id; closeModal(); loadCourses(); }
+function openAddStudents() {
+  showModal(`<h2>Add students</h2><label>One per line: TP number, name, email</label><textarea id="aStu" rows="7"></textarea>
+    <div class="actions"><button class="btn ghost" onclick="closeModal()">Cancel</button><button class="btn" onclick="saveStudents()">Add</button></div>`);
+}
+async function saveStudents() { await api(`/api/courses/${currentCourse}/students`, "POST", {students: $("aStu").value}); closeModal(); loadAttendance(); }
+
+// ---------- inquiries
+async function loadInquiries() {
+  $("inqLink").textContent = ME.inquiry_link;
+  const all = await api("/api/inquiries");
+  const cats = ["all", "new", ...new Set(all.map(q => q.category))];
+  $("inqFilter").innerHTML = cats.map(c => `<button class="${c === inqFilter ? "on" : ""}" onclick="inqFilter='${esc(c)}';loadInquiries()">${c === "all" ? "All (" + all.length + ")" : c === "new" ? "Unread" : esc(c)}</button>`).join("");
+  const list = all.filter(q => inqFilter === "all" || (inqFilter === "new" ? q.status === "new" : q.category === inqFilter));
+  $("inqAll").innerHTML = list.length ? list.map(inqBox).join("") : '<div class="empty">No inquiries here.</div>';
+  setBadge(all.filter(q => q.status === "new").length);
+}
+async function openInquiry(id) {
+  const q = await api("/api/inquiries/" + id);
+  showModal(`<span class="tag t-class">${esc(q.category)}</span> <span class="tag p-${q.priority}">${q.priority} priority</span>
+    <h2 style="margin-top:8px">${esc(q.subject)}</h2>
+    <div class="muted">From <b>${esc(q.student_name)}</b>${q.student_id ? " (" + esc(q.student_id) + ")" : ""}${q.student_email ? " · " + esc(q.student_email) : ""}${q.module ? " · " + esc(q.module) : ""} · ${q.created_at.replace("T", " ")}</div>
+    <div class="msg-body">${esc(q.message)}</div>
+    <div class="ai-tools">
+      <button class="btn ghost small" onclick="aiMeet(${q.id})">${ic("calendar")} AI: find a meeting time</button>
+      ${q.category === "Extension Request" ? `<button class="btn ghost small" onclick="aiExt(${q.id})">${ic("spark")} AI: extension advice</button>` : ""}
+    </div>
+    <div id="qAi"></div>
+    <label>${q.status === "replied" ? "Your reply" : ic("spark") + " Reply (draft written by AI - edit before sending)"}</label>
+    <textarea id="qReply" rows="6">${esc(q.reply || q.suggested_reply)}</textarea>
+    <div class="actions">
+      <button class="btn ghost small" onclick="delInquiry(${q.id})">Delete</button>
+      <button class="btn ghost small" onclick="reanalyse(${q.id})">${ic("spark")} Re-run AI</button>
+      <button class="btn ghost small" onclick="markUnread(${q.id})">Mark unread</button>
+      ${q.student_email ? `<a class="btn ghost small" style="text-decoration:none" href="mailto:${encodeURIComponent(q.student_email)}?subject=${encodeURIComponent("Re: " + q.subject)}&body=" onclick="this.href+=encodeURIComponent($('qReply').value)">Open in email app</a>` : ""}
+      <button class="btn small" onclick="sendReply(${q.id})">Save as replied</button>
+    </div>`);
+  refreshCurrent();
+}
+async function sendReply(id) { await api("/api/inquiries/" + id, "POST", {action: "reply", reply: $("qReply").value}); closeModal(); toast("Marked as replied"); refreshCurrent(); }
+async function markUnread(id) { await api("/api/inquiries/" + id, "POST", {action: "unread"}); closeModal(); refreshCurrent(); }
+async function reanalyse(id) {
+  if (!ME.has_key) { $("qAi").innerHTML = keyNotice(); return; }
+  toast("Asking Gemini...");
+  try { await api("/api/inquiries/" + id, "POST", {action: "reanalyse"}); openInquiry(id); }
+  catch (e) { if (e && e.need_key) { ME.has_key = false; $("qAi").innerHTML = keyNotice(); } }
+}
+async function delInquiry(id) { if (!confirm("Delete this inquiry?")) return; await api("/api/inquiries/" + id, "DELETE"); closeModal(); refreshCurrent(); }
+
+// ---------- tasks
+async function loadTasks(list) {
+  list = list || await api("/api/tasks");
+  $("taskList").innerHTML = list.length ? list.map(t => `<div class="task ${t.done ? "done" : ""}">
+    <input type="checkbox" ${t.done ? "checked" : ""} onchange="toggleTask(${t.id})"><span>${esc(t.text)}</span>
+    <small class="muted" style="margin-left:auto">${t.due ? niceDate(t.due) : ""}</small><button class="x" onclick="delTask(${t.id})">${ic("x")}</button></div>`).join("")
+    : '<div class="empty">No tasks yet.</div>';
+}
+async function addTask() { if (!$("tText").value.trim()) return; loadTasks(await api("/api/tasks", "POST", {text: $("tText").value, due: $("tDue").value})); $("tText").value = ""; }
+async function toggleTask(id) { await api("/api/tasks/" + id, "PATCH"); toast("Task updated"); refreshCurrent(); }
+async function delTask(id) { await api("/api/tasks/" + id, "DELETE"); loadTasks(); }
+
+// ---------- settings
+function loadSettings() { $("setName").value = ME.name; $("aiStatus").innerHTML = ME.has_key ? ic("check") + " A Gemini key is saved." : ic("alert") + " No key saved yet. AI features stay locked until you add one."; }
+async function saveName() { await api("/api/settings", "POST", {name: $("setName").value}); await loadMe(); toast("Saved"); }
+async function saveKey() { if (!$("setKey").value.trim()) return toast("Paste a key first"); await api("/api/settings", "POST", {gemini_key: $("setKey").value}); $("setKey").value = ""; await loadMe(); loadSettings(); briefCache = null; resetChatGreeting(); toast("Key saved - AI features unlocked"); }
+async function testAi() { $("aiStatus").textContent = "Testing..."; const r = await api("/api/test-ai", "POST", {}); $("aiStatus").innerHTML = (r.ok ? ic("check") : ic("x")) + " " + r.message; }
+async function newInquiryLink() { if (!confirm("The old link will stop working. Continue?")) return; await api("/api/settings", "POST", {new_inquiry_link: true}); await loadMe(); toast("New link created - see Inquiries tab"); }
+
+// ---------- AI features
+// Shown wherever an AI result would appear when no Gemini key is saved
+const keyNotice = () => `<div class="ai-box need"><h4>${ic("alert")} Gemini API key needed</h4>
+  <div>Add your Gemini API key in <b>Settings</b> before you can use AI features. You can get a free key at aistudio.google.com.</div>
+  <div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="btn small" onclick="goAddKey()">${ic("settings")} Add Gemini key</button></div></div>`;
+function goAddKey() { closeModal(); $("chatPanel").classList.add("hidden"); go("settings"); setTimeout(() => { $("setKey").focus(); $("keyCard").classList.add("flash"); setTimeout(() => $("keyCard").classList.remove("flash"), 1600); }, 50); }
+// Calls an AI route. If there is no key, shows the notice inside `el` (or a pop-up) and returns null.
+async function aiApi(url, method, body, el) {
+  const showNeed = () => { if (el) el.innerHTML = keyNotice(); else showModal(`<h2>${ic("spark")} AI feature</h2>` + keyNotice() + `<div class="actions"><button class="btn ghost" onclick="closeModal()">Close</button></div>`); return null; };
+  if (!ME.has_key) return showNeed();
+  try { return await api(url, method, body); }
+  catch (e) { if (e && e.need_key) { ME.has_key = false; return showNeed(); } if (el) el.innerHTML = '<div class="muted">Something went wrong. Please try again.</div>'; return null; }
+}
+const srcBadge = (el, src) => { el.className = "ai-src " + src; el.textContent = src === "gemini" ? "Gemini" : "Basic mode"; };
+const loading = t => `<div class="loading">${t}</div>`;
+let briefCache = null;
+async function loadBriefing(force) {
+  if (briefCache && !force) return showBriefing(briefCache);
+  $("brief").innerHTML = loading("Reading your day...");
+  $("briefSrc").className = "ai-src hidden";
+  const b = await aiApi("/api/ai/briefing", "GET", undefined, $("brief"));
+  if (b) { briefCache = b; showBriefing(b); }
+}
+function showBriefing(b) {
+  srcBadge($("briefSrc"), b.source);
+  $("brief").innerHTML = `<div class="brief-h">${esc(b.headline)}</div><ul>${b.bullets.map(x => `<li>${esc(x)}</li>`).join("")}</ul>`;
+}
+
+// natural-language event
+async function aiEvent() {
+  const text = $("nlEvent").value.trim(); if (!text) return toast("Type the event first");
+  if (ME.has_key) toast("AI is filling in the event...");
+  const p = await aiApi("/api/ai/parse-event", "POST", {text});
+  if (!p) return;
+  openEvent(p.date); fillEvent(p);
+  $("modalBox").insertAdjacentHTML("afterbegin", `<div class="ai-box" style="margin-bottom:14px"><h4>${ic("spark")} Filled in by AI <span class="ai-src ${p.source}">${p.source === "gemini" ? "Gemini" : "Basic mode"}</span></h4>Check the details, then press Save event.</div>`);
+  $("nlEvent").value = "";
+}
+
+// at-risk insights
+async function aiInsights() {
+  showModal(`<h2>${ic("spark")} AI attendance insights</h2><p class="muted" style="margin-top:0">Patterns and next steps for students below 80%.</p><div id="insBody">${loading("Analysing attendance patterns...")}</div>`);
+  const r = await aiApi(`/api/ai/insights/${currentCourse}`, "POST", {}, $("insBody"));
+  if (!r) return;
+  window._ins = r.items;
+  $("insBody").innerHTML = (r.items.length ? `<div style="margin-bottom:10px"><span class="ai-src ${r.source}">${r.source === "gemini" ? "Gemini" : "Basic mode"}</span></div>` + r.items.map((s, i) => `
+    <div class="ins"><div class="hd"><b>${esc(s.name)}</b><small class="muted">${esc(s.student_id)}</small>
+      <span class="tag p-High">${s.percent}%</span><span class="tag ${s.risk === "High" ? "p-High" : "t-appointment"}">${esc(s.risk)} risk</span></div>
+      <p>${esc(s.insight)}</p><div class="act">${ic("right")} ${esc(s.action)}</div>
+      <div class="actions" style="justify-content:flex-start;margin-top:10px">
+        <button class="btn ghost small" onclick="viewInsEmail(${i})">${ic("mail")} View check-in email</button>
+        ${s.email ? `<a class="btn small" style="text-decoration:none" href="mailto:${encodeURIComponent(s.email)}?subject=${encodeURIComponent(s.email_subject)}&body=${encodeURIComponent(s.email_body)}">Send email</a>` : ""}
+      </div><div id="insMail${i}"></div></div>`).join("") : `<div class="empty">${esc(r.message || "No at-risk students.")}</div>`)
+    + `<div class="actions"><button class="btn ghost" onclick="closeModal()">Close</button></div>`;
+}
+function viewInsEmail(i) {
+  const s = window._ins[i], el = $("insMail" + i);
+  el.innerHTML = el.innerHTML ? "" : `<label>Subject</label><input value="${esc(s.email_subject)}"><label>Message</label><textarea rows="7">${esc(s.email_body)}</textarea>`;
+}
+
+// meeting finder inside an inquiry
+async function aiMeet(id) {
+  $("qAi").innerHTML = `<div class="ai-box">${loading("Checking the message and your calendar...")}</div>`;
+  const r = await aiApi(`/api/ai/schedule/${id}`, "POST", {}, $("qAi"));
+  if (!r) return;
+  window._meet = r;
+  $("qAi").innerHTML = `<div class="ai-box"><h4>${ic("calendar")} Meeting finder <span class="ai-src ${r.source}">${r.source === "gemini" ? "Gemini" : "Basic mode"}</span></h4>
+    <div class="muted" style="margin-bottom:6px">${r.wants_meeting ? "Student request: " + esc(r.student_request) : "This message does not clearly ask for a meeting. Here are your next free slots anyway."}</div>
+    ${r.suggestions.length ? r.suggestions.map((s, i) => `<div class="slot"><div><b>${esc(s.label)}</b><br><small>${esc(s.reason || "")}</small></div>
+      <button class="btn small" onclick="bookMeet(${id},${i})">Book</button></div>`).join("") : '<div class="muted">No free slots in the next 7 days.</div>'}</div>`;
+}
+async function bookMeet(id, i) {
+  const s = window._meet.suggestions[i];
+  await api(`/api/ai/schedule/${id}/book`, "POST", {date: s.date, start: s.start, end: s.end});
+  toast("Booked " + s.label);
+  const first = (window._meet.student_name || "").split(" ")[0];
+  $("qReply").value = `Hi ${first},\n\nLet's meet on ${s.label}. I've added it to my calendar - see you then.\n\nBest regards,\n${ME.name}`;
+  $("qAi").innerHTML = `<div class="ai-box"><h4>${ic("check")} Added to your calendar</h4>${esc(s.label)}. A reply has been drafted below.</div>`;
+}
+
+// extension advisor
+async function aiExt(id) {
+  $("qAi").innerHTML = `<div class="ai-box">${loading("Reviewing the extension request...")}</div>`;
+  const r = await aiApi(`/api/ai/extension/${id}`, "POST", {}, $("qAi"));
+  if (!r) return;
+  window._ext = r;
+  const cls = r.recommendation.startsWith("Approve") ? "Approve" : r.recommendation.startsWith("Decline") ? "Decline" : "Ask";
+  $("qAi").innerHTML = `<div class="ai-box"><h4>${ic("spark")} Extension advice <span class="ai-src ${r.source}">${r.source === "gemini" ? "Gemini" : "Basic mode"}</span></h4>
+    <div class="rec ${cls}">${esc(r.recommendation)}${r.suggested_extension && r.suggested_extension !== "-" ? " · " + esc(r.suggested_extension) : ""}</div>
+    <div style="margin:4px 0 6px;color:#c9c9c9">${esc(r.reason)}</div>
+    ${r.attendance !== null && r.attendance !== undefined ? `<div class="muted">Student attendance: ${r.attendance}%</div>` : ""}
+    <ul>${r.checklist.map(c => `<li>${esc(c)}</li>`).join("")}</ul>
+    <div class="actions" style="justify-content:flex-start;margin-top:10px"><button class="btn small" onclick="$('qReply').value=window._ext.reply;toast('Reply updated')">Use this reply</button>
+    <span class="muted" style="font-size:12px;align-self:center">You make the final decision.</span></div></div>`;
+}
+
+// task suggestions
+async function aiTasks() {
+  $("taskSugg").innerHTML = loading("Looking at your messages, classes and students...");
+  const r = await aiApi("/api/ai/tasks", "GET", undefined, $("taskSugg"));
+  if (!r) return;
+  window._sugg = r.suggestions; srcBadge($("tsSrc"), r.source);
+  $("taskSugg").innerHTML = r.suggestions.length ? r.suggestions.map((s, i) => `<div class="sugg" id="sg${i}"><div>${esc(s.text)}
+    <small>${s.due ? niceDate(s.due) + " · " : ""}${esc(s.why)}</small></div><button class="btn ghost small" onclick="addSugg(${i})">${ic("plus")} Add</button></div>`).join("")
+    : '<div class="empty">Nothing to suggest right now - you are on top of things.</div>';
+}
+async function addSugg(i) {
+  const s = window._sugg[i];
+  loadTasks(await api("/api/tasks", "POST", {text: s.text, due: s.due}));
+  $("sg" + i).remove(); toast("Task added");
+}
+
+// chat assistant
+let chatHist = [];
+function resetChatGreeting() {
+  const first = $("chatLog").firstElementChild;
+  if (!first) return;
+  if (ME.has_key) { first.className = "msg bot"; first.textContent = "Hi! Ask me about your schedule, free time, attendance, student messages or tasks."; }
+  else { first.className = "msg bot wide"; first.innerHTML = keyNotice(); }
+}
+function toggleChat() { $("chatPanel").classList.toggle("hidden"); if (!$("chatPanel").classList.contains("hidden")) $("chatIn").focus(); }
+document.querySelectorAll("#chatChips button").forEach(b => b.onclick = () => { $("chatIn").value = b.textContent; sendChat(); });
+function addMsg(role, text) { const d = document.createElement("div"); d.className = "msg " + role; d.textContent = text; $("chatLog").appendChild(d); $("chatLog").scrollTop = 1e9; return d; }
+async function sendChat(e) {
+  if (e) e.preventDefault();
+  const text = $("chatIn").value.trim(); if (!text) return;
+  $("chatIn").value = ""; addMsg("user", text);
+  const wait = addMsg("bot", "Thinking...");
+  if (!ME.has_key) { wait.innerHTML = keyNotice(); wait.classList.add("wide"); return; }
+  try {
+    const r = await api("/api/ai/chat", "POST", {message: text, history: chatHist});
+    wait.textContent = r.reply; srcBadge($("chatSrc"), r.source);
+    chatHist.push({role: "user", text}, {role: "bot", text: r.reply}); chatHist = chatHist.slice(-10);
+  } catch (err) {
+    if (err && err.need_key) { ME.has_key = false; wait.innerHTML = keyNotice(); wait.classList.add("wide"); }
+    else wait.textContent = "Sorry, something went wrong.";
+  }
+}
+
+async function loadMe() {
+  ME = await api("/api/me"); $("meName").textContent = ME.name; $("meEmail").textContent = ME.email;
+  const parts = ME.name.replace(/^(dr|prof|mr|ms|mrs)\.?\s+/i, "").split(/\s+/);
+  $("avatar").textContent = (parts[0][0] + (parts[1] ? parts[1][0] : "")).toUpperCase();
+}
+document.addEventListener("click", e => { if (!e.target.closest(".user")) $("userMenu").classList.add("hidden"); });
+loadMe().then(() => { resetChatGreeting(); loadDashboard(); });
+</script>
+{% endraw %}
+
+{% elif view == 'auth' %}
+{# ===================== LOGIN / REGISTER ===================== #}
+<div class="login-wrap">
+  <form class="card login" method="post">
+    <div class="brand-login"><svg class="logo"><use href="#logo"/></svg><h2>Teacher<span>Portal</span></h2></div>
+    <p class="muted" style="margin:0 0 10px">{{ 'Log in to your lecturer workspace' if mode=='login' else 'Create a lecturer account' }}</p>
+    {% if error %}<div class="alert err">{{ error }}</div>{% endif %}
+    {% if mode=='register' %}
+    <label>Full name</label><input name="name" required placeholder="Dr. Sarah Lim">
+    {% endif %}
+    <label>Email</label><input name="email" type="email" required value="{{ 'lecturer@apu.edu.my' if mode=='login' else '' }}">
+    <label>Password</label><input name="password" type="password" required>
+    <button class="btn" style="width:100%;margin-top:16px">{{ 'Log in' if mode=='login' else 'Create account' }}</button>
+    <p class="muted" style="text-align:center;font-size:13px">
+      {% if mode=='login' %}
+        Demo: lecturer@apu.edu.my / password123<br>
+        No account? <a href="{{ url_for('register') }}">Register</a>
+      {% else %}
+        Already have an account? <a href="{{ url_for('login') }}">Log in</a>
+      {% endif %}
+    </p>
+  </form>
+</div>
+
+{% else %}
+{# ===================== STUDENT PAGES ===================== #}
+<div class="public">
+<div class="pub-brand"><svg class="logo"><use href="#logo"/></svg><b>Teacher<span>Portal</span></b></div>
+
+{% if page=='closed' %}
+  <div class="card head">
+    <h1>This link is not available</h1>
+    <p class="muted">It may have been turned off by your lecturer. Please ask them for a new link.</p>
+  </div>
+
+{% elif page=='book' %}
+  <div class="head">
+    <span class="tag t-appointment">Appointment booking</span>
+    <h1>{{ link.title }} with {{ lecturer }}</h1>
+    <p class="muted">{{ link.duration }} minutes{% if link.location %} · {{ link.location }}{% endif %}</p>
+  </div>
+  {% if msg %}<div class="alert ok">{{ msg }}</div>{% endif %}
+  {% if err %}<div class="alert err">{{ err }}</div>{% endif %}
+  {% if not msg %}
+  <form class="card" method="post">
+    <div class="row">
+      <div><label>Your name</label><input name="name" required></div>
+      <div><label>Your email</label><input name="email" type="email" required></div>
+    </div>
+    <label>Reason for the meeting (optional)</label>
+    <textarea name="reason" placeholder="e.g. Need help with my Java assignment"></textarea>
+    <label>Pick a time (next 14 days)</label>
+    {% if days %}
+      {% for d in days %}
+      <div class="slotday">
+        <b>{{ d.label }}</b>
+        <div class="slots">
+          {% for s in d.slots %}
+          <label><input type="radio" name="pick" value="{{ d.date }}|{{ s }}" required
+                 onchange="document.getElementById('dt').value='{{ d.date }}';document.getElementById('sl').value='{{ s }}'"><span>{{ s }}</span></label>
+          {% endfor %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+      <p class="empty">No free slots in the next 14 days. Please contact your lecturer.</p>
+    {% endif %}
+    <input type="hidden" name="date" id="dt"><input type="hidden" name="slot" id="sl">
+    <button class="btn" style="width:100%;margin-top:10px">Confirm booking</button>
+  </form>
+  {% endif %}
+
+{% elif page=='ask' %}
+  <div class="head">
+    <span class="tag t-class">Student inquiry</span>
+    <h1>Message {{ lecturer }}</h1>
+    <p class="muted">Ask about assignments, extensions, marks or anything about your module.</p>
+  </div>
+  {% if msg %}<div class="alert ok">{{ msg }}</div>{% endif %}
+  {% if err %}<div class="alert err">{{ err }}</div>{% endif %}
+  {% if not msg %}
+  <form class="card" method="post">
+    <div class="row">
+      <div><label>Your name</label><input name="name" required></div>
+      <div><label>Student ID</label><input name="student_id" placeholder="TP0XXXXX"></div>
+    </div>
+    <div class="row">
+      <div><label>Email</label><input name="email" type="email"></div>
+      <div><label>Module</label><input name="module" placeholder="e.g. Java Programming"></div>
+    </div>
+    <label>Subject</label><input name="subject" required>
+    <label>Message</label><textarea name="message" rows="7" required></textarea>
+    <button class="btn" style="width:100%;margin-top:14px">Send message</button>
+  </form>
+  {% endif %}
+{% endif %}
+
+</div>
+{% endif %}
+</body>
+</html>
